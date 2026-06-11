@@ -1,0 +1,206 @@
+======================================================================
+PIZZA SALES PERFORMANCE DASHBOARD - DAX MEASURES CATALOG
+======================================================================
+Author: Vrushabh Dhawade
+Project: Pizza Sales Performance Analysis
+File Description: Structured catalog of all DAX measures utilized 
+                  in the Power BI model.
+======================================================================
+
+----------------------------------------------------------------------
+1. CORE KPI MEASURES (FOUNDATIONAL CALCULATIONS)
+----------------------------------------------------------------------
+
+total revenue = SUM(sales[total_price])
+
+total orders = DISTINCTCOUNT(sales[order_id])
+
+sold qty = SUM(sales[quantity])
+
+avg order value = DIVIDE( [total revenue], [total orders])
+
+avg pizza per orders = DIVIDE([sold qty], [total orders])
+
+overall sales = CALCULATE([total revenue], ALL(sales))
+
+% of sales = DIVIDE([total revenue], [overall sales])
+
+
+----------------------------------------------------------------------
+2. DYNAMIC TITLES & HEADER CONTEXT MEASURES
+----------------------------------------------------------------------
+
+Current Info = 
+VAR _Size =
+    SWITCH(
+        SELECTEDVALUE(sales[pizza_size]),
+        "L", "Large",
+        "M", "Medium",
+        "S", "Small",
+        "XL", "X-Large",
+        "XXL", "XX-Large",
+        "All Sizes"
+    )
+
+VAR _Month =
+    COALESCE(
+        SELECTEDVALUE('calendar'[Month Name]),
+        "Multiple"
+    )
+
+VAR _Year =
+    COALESCE(
+        FORMAT(SELECTEDVALUE('calendar'[Year]), "0"),
+        "Multiple"
+    )
+
+VAR _Category =
+    COALESCE(
+        SELECTEDVALUE(sales[pizza_category]),
+        "Multiple"
+    )
+
+RETURN
+    "Date : "
+        & _Month & "-" & _Year
+        & " | Category : "
+        & _Category
+        & " | Size : "
+        & _Size
+
+
+Daily KPI's Dynamic Title = "Daily " & SELECTEDVALUE('KPI''s'[Category]) & " Trend"
+
+
+Monthly KPI's Dynamic Title = "Monthly " & SELECTEDVALUE('KPI''s'[Category]) & " Trend"
+
+
+----------------------------------------------------------------------
+3. UI/UX & CONDITIONAL FORMATTING COLOR MEASURES
+----------------------------------------------------------------------
+
+sales icon = "●"
+
+sales category color = 
+SWITCH(
+    SELECTEDVALUE(sales[pizza_category]),
+    "Classic", "#3110AB",
+    "Supreme", "#E1C233",
+    "Chicken", "#573B92",
+    "Veggie", "#DE6A73",
+    "#808080"
+)
+
+sales pizza size color = 
+SWITCH(
+    SELECTEDVALUE(sales[pizza_size]),
+    "L", "#7A5AED",
+    "M", "#7DD2F3",
+    "S", "#94F1BB",
+    "XL", "#E595F1",
+    "XXL", "#F664E2",
+    "#7A5AED"
+)
+
+
+----------------------------------------------------------------------
+4. TOP PERFORMING PRODUCT RANKINGS (BEST PIZZAS)
+----------------------------------------------------------------------
+
+Top Pizza Name & Revenue = 
+MAXX(
+    TOPN(
+        1,
+        ALL(sales[pizza_name]),
+        [total revenue],
+        DESC
+    ),
+    sales[pizza_name] & " | " & FORMAT([total revenue], "₹#,##0.00")
+)
+
+Top Pizza Name & Orders = 
+MAXX(
+    TOPN(
+        1,
+        ALL(sales[pizza_name]),
+        [total orders],
+        DESC
+    ),
+    sales[pizza_name] & " | " & FORMAT([total orders], "0.00")
+)
+
+Top Pizza & Quantity = 
+MAXX(
+    TOPN(
+        1,
+        ALL(sales[pizza_name]),
+        [sold qty],
+        DESC
+    ),
+    sales[pizza_name] & " | " & FORMAT([sold qty], "0")
+)
+
+
+----------------------------------------------------------------------
+5. BOTTOM PERFORMING PRODUCT RANKINGS (WORST PIZZAS)
+----------------------------------------------------------------------
+
+Worst Pizza & Revenue = 
+VAR PizzaSummary =
+    SUMMARIZE(
+        ALLSELECTED(sales),
+        sales[pizza_name],
+        "Revenue", [total revenue]
+    )
+VAR WorstPizza =
+    TOPN(
+        1,
+        PizzaSummary,
+        [Revenue],
+        ASC
+    )
+RETURN
+    MAXX(
+        WorstPizza,
+        sales[pizza_name] & " | " & FORMAT([Revenue], "₹#,##0.00")
+    )
+
+Worst Pizza & Total Orders = 
+VAR PizzaSummary =
+    SUMMARIZE(
+        ALLSELECTED(sales),
+        sales[pizza_name],
+        "total orders", [total orders]
+    )
+VAR WorstPizza =
+    TOPN(
+        1,
+        PizzaSummary,
+        [total orders],
+        ASC
+    )
+RETURN
+    MAXX(
+        WorstPizza,
+        sales[pizza_name] & " | " & FORMAT([total orders], "0.00")
+    )
+
+Worst Pizza & Sold Qty = 
+VAR PizzaSummary =
+    SUMMARIZE(
+        ALLSELECTED(sales),
+        sales[pizza_name],
+        "sold quantity", [sold qty]
+    )
+VAR WorstPizza =
+    TOPN(
+        1,
+        PizzaSummary,
+        [sold quantity],
+        ASC
+    )
+RETURN
+    MAXX(
+        WorstPizza,
+        sales[pizza_name] & " | " & FORMAT([sold quantity], "0.00")
+    )
